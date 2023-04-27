@@ -1,0 +1,45 @@
+name: Static Site Generator
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "app.py"
+      - "templates/*"
+      - "table.json"
+      - ".github/workflows/ssg.yml"
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone Repo
+        uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate Site
+        run: |
+          python app.py &
+          sleep 5
+          mkdir build
+          cd build
+          for i in {1..118}; do
+            curl -s http://localhost:5000/$i > $i
+          done
+          killall python
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build
+
